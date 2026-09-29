@@ -1,0 +1,611 @@
+/* ─────────────── journey map ─────────────── */
+
+.journey {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  background: #0c0a14;
+  cursor: grab;
+  --region-accent: #ffd27a;
+}
+.journey:active {
+  cursor: grabbing;
+}
+.jr-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.jr-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  will-change: transform;
+  pointer-events: none;
+}
+.jr-near {
+  pointer-events: none;
+}
+.jr-near > button {
+  pointer-events: auto;
+}
+.jr-layer svg {
+  display: block;
+  overflow: visible;
+}
+.jr-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 75% 85% at 50% 50%, transparent 55%, rgba(4, 2, 8, 0.5) 100%), linear-gradient(180deg, rgba(6, 4, 10, 0.4), transparent 22%, transparent 82%, rgba(6, 4, 10, 0.55));
+}
+
+/* Sky life */
+.jr-stars circle {
+  fill: #fff6e6;
+}
+.jr-stars svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.tw {
+  will-change: opacity;
+  animation: twinkle 3.4s ease-in-out infinite alternate;
+}
+.tw1 {
+  animation-duration: 4.6s;
+  animation-delay: -2s;
+}
+.tw2 {
+  animation-duration: 2.7s;
+  animation-delay: -1s;
+}
+@keyframes twinkle {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0.25;
+  }
+}
+.glow-dot {
+  opacity: 0.9;
+}
+/* (Fireflies, ripples and lamp glows are intentionally static: animating SVG children would
+   repaint the whole panorama layer every frame on phones.) */
+
+/* The footpath */
+.jr-trail {
+  fill: none;
+  stroke: rgba(255, 244, 228, 0.42);
+  stroke-linecap: round;
+}
+.jr-lit {
+  fill: none;
+  stroke: #f5f8ff;
+  stroke-linecap: round;
+}
+.jr-lit-halo {
+  fill: none;
+  stroke: rgba(143, 184, 255, 0.3);
+  stroke-linecap: round;
+}
+.jr-sign {
+  fill: none;
+  stroke: rgba(255, 244, 228, 0.45);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Lamps */
+.lamp-post,
+.lamp-cap {
+  fill: none;
+  stroke: #0c0810;
+  stroke-linecap: round;
+}
+.lamp-body {
+  fill: #3a2e27;
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 0.6;
+  transition: fill 0.6s;
+}
+.lamp-rib {
+  fill: none;
+  stroke: rgba(40, 22, 10, 0.45);
+}
+.jr-lamp.lit .lamp-body {
+  fill: #ffdca0;
+}
+.lamp-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes lamp-flicker {
+  0% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.95;
+    transform: scale(0.94);
+  }
+}
+.lamp-ember {
+  fill: var(--warm);
+  opacity: 0.55;
+}
+.jr-lamp.frontier .lamp-ember {
+  opacity: 1;
+  animation: ember-pulse 2.2s ease-in-out infinite;
+}
+@keyframes ember-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.jr-lamp.locked {
+  opacity: 0.5;
+}
+.jr-lamp.locked .lamp-ember {
+  display: none;
+}
+.lamp-pulse {
+  fill: none;
+  stroke: var(--warm);
+  stroke-width: 1;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lamp-pulse 2.6s var(--ease-out) infinite;
+}
+@keyframes lamp-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.jr-lamp.frontier .lamp-body {
+  fill: #5a4636;
+}
+.lamp-star {
+  fill: rgba(255, 244, 228, 0.18);
+}
+.lamp-star.on {
+  fill: var(--warm);
+}
+.lamp-num {
+  fill: rgba(255, 244, 228, 0.42);
+  font-family: var(--mono);
+  text-anchor: middle;
+  letter-spacing: 0.05em;
+}
+.jr-lamp.frontier .lamp-num {
+  fill: var(--warm);
+}
+.jr-lamp.pending .lamp-glow {
+  opacity: 0;
+  animation: none;
+}
+.jr-lamp.pending .lamp-body {
+  fill: #3a2e27;
+}
+.jr-lamp.pending .lamp-star {
+  opacity: 0;
+}
+.jr-lamp.ignite .lamp-glow {
+  animation: ignite 1.2s var(--ease-out) forwards;
+}
+.jr-lamp.ignite .lamp-body {
+  fill: #ffdca0;
+}
+.jr-lamp.ignite .lamp-star {
+  opacity: 1;
+  transition: opacity 0.6s 0.4s;
+}
+@keyframes ignite {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.jr-lamp.opening .lamp-glow,
+.jr-lamp.opening .lamp-pulse {
+  animation: open-flare 0.6s ease-out forwards;
+}
+@keyframes open-flare {
+  to {
+    transform: scale(2.2);
+    opacity: 1;
+  }
+}
+.jr-lamp.deny {
+  animation: deny 0.4s ease;
+}
+@keyframes deny {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+.jr-lamp-btn {
+  position: absolute;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.jr-lamp-btn.locked {
+  cursor: default;
+}
+
+/* World titles */
+.jr-title {
+  position: absolute;
+  top: calc(var(--sa-t) + clamp(58px, 17vh, 150px));
+  display: grid;
+  gap: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.55);
+}
+.jr-t-num {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 9.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+.jr-t-num b {
+  font-weight: 500;
+  color: var(--accent, var(--warm));
+}
+.jr-t-num i {
+  font-style: normal;
+  color: var(--text-dim);
+}
+.jr-t-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-size: clamp(26px, 8.4vh, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.012em;
+}
+.jr-t-sub {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.jr-t-stars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+.jr-t-stars svg {
+  width: 10px;
+  height: 10px;
+  fill: var(--warm);
+}
+.jr-title.locked {
+  opacity: 0.55;
+}
+.jr-title.done .jr-t-name::after {
+  content: ' ✦';
+  font-style: normal;
+  font-size: 0.4em;
+  vertical-align: 0.6em;
+  color: var(--warm);
+}
+
+/* Mist over the worlds still asleep */
+.jr-fog {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--edge, 140px));
+  mask-image: linear-gradient(90deg, transparent, #000 var(--edge, 140px));
+  background: linear-gradient(180deg, rgba(120, 110, 160, 0.38), rgba(90, 84, 130, 0.5) 60%, rgba(70, 64, 100, 0.62));
+}
+.jr-fog i {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  height: 60%;
+  background: radial-gradient(ellipse 18% 45% at 20% 50%, rgba(210, 205, 235, 0.28), transparent 70%), radial-gradient(ellipse 22% 40% at 55% 45%, rgba(210, 205, 235, 0.22), transparent 70%), radial-gradient(ellipse 16% 50% at 85% 55%, rgba(210, 205, 235, 0.26), transparent 70%);
+  animation: fog-drift 26s ease-in-out infinite alternate;
+}
+.jr-fog .fog-a {
+  top: 20%;
+}
+.jr-fog .fog-b {
+  top: 45%;
+  animation-duration: 34s;
+  animation-direction: alternate-reverse;
+}
+.jr-fog .fog-c {
+  top: -5%;
+  animation-duration: 41s;
+  opacity: 0.7;
+}
+@keyframes fog-drift {
+  to {
+    transform: translateX(8%);
+  }
+}
+
+.jr-dawn {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: var(--hand);
+  font-size: 24px;
+  color: rgba(255, 236, 206, 0.85);
+  text-shadow: 0 0 16px rgba(255, 200, 120, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* The frontier tag above a lamp */
+.jr-tag {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px 6px;
+  border-radius: 999px;
+  background: rgba(14, 10, 22, 0.72);
+  border: 1px solid var(--hair);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -100%) translateY(6px);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s, transform 0.45s var(--ease-spring);
+}
+.jr-tag::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  background: rgba(14, 10, 22, 0.72);
+  border-right: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  transform: rotate(45deg);
+}
+.jr-tag.show {
+  opacity: 1;
+  transform: translate(-50%, -100%);
+}
+.jr-tag b {
+  font-weight: 400;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--warm);
+}
+.jr-tag span {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 15px;
+}
+.jr-tag.note span {
+  font-family: var(--hand);
+  font-style: normal;
+  font-size: 17px;
+  color: #ffe0a8;
+}
+
+/* Chrome */
+.jr-head {
+  position: absolute;
+  top: calc(var(--sa-t) + 10px);
+  left: calc(var(--sa-l) + 12px);
+  right: calc(var(--sa-r) + 12px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+.jr-head > * {
+  pointer-events: auto;
+}
+.jr-head-mid {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  pointer-events: none;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+}
+.jr-kicker {
+  font-size: 8.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.jr-heading {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 15px;
+  color: var(--text-dim);
+}
+.jr-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.jr-total {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px 0 12px;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--hair);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.jr-total svg {
+  width: 12px;
+  height: 12px;
+  fill: var(--warm);
+  filter: drop-shadow(0 0 4px rgba(255, 200, 110, 0.7));
+}
+.jr-total b {
+  font-weight: 500;
+}
+.jr-total i {
+  font-style: normal;
+  color: var(--text-faint);
+}
+
+.jr-timeline {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--sa-b) + 6px);
+  width: min(560px, 64vw);
+  height: 32px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.jr-tl-end {
+  font-family: var(--hand);
+  font-size: 16px;
+  color: var(--text-dim);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+.jr-tl-track {
+  position: relative;
+  flex: 1;
+  height: 32px;
+}
+.jr-tl-line,
+.jr-tl-lit {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 1px;
+}
+.jr-tl-line {
+  right: 0;
+  background: rgba(255, 244, 228, 0.34);
+}
+.jr-tl-lit {
+  height: 1.5px;
+  margin-top: -0.25px;
+  background: #f3f7ff;
+  box-shadow: 0 0 6px var(--moon);
+}
+.jr-thumb {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 1px solid var(--region-accent);
+  background: radial-gradient(circle, var(--region-accent) 0 2.5px, transparent 3.5px);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--region-accent) 50%, transparent);
+  pointer-events: none;
+}
+.jr-tick {
+  position: absolute;
+  top: 0;
+  width: 34px;
+  height: 32px;
+  margin-left: -17px;
+  display: grid;
+  place-items: center;
+}
+.jr-tick span {
+  margin-top: -20px;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 244, 228, 0.78);
+}
+.jr-tick::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.jr-tick.locked {
+  opacity: 0.45;
+}
+
+/* The one orb of the night */
+.jr-orb {
+  position: absolute;
+  left: -50px;
+  top: -50px;
+  width: 100px;
+  height: 100px;
+  pointer-events: none;
+  will-change: transform;
+  --oc: #eef2ff;
+  --og: rgba(170, 200, 255, 0.3);
+}
+.jr-orb-halo {
+  position: absolute;
+  inset: -190%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--og) 0%, transparent 62%);
+}
+.jr-orb-disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 34%, #fff 0%, var(--oc) 42%, var(--oc) 100%);
+  box-shadow: 0 0 24px var(--og);
+  opacity: 0.94;
+}
+
+/* Foreground grasses */
+.fore-mass,
+.fore-blades {
+  fill: #06040a;
+}
+.jr-fore svg {
+  opacity: 0.96;
+}

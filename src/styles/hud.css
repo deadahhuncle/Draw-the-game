@@ -1,0 +1,754 @@
+/* ─────────────── HUD: gutters beside the level + a fuse of ink along its top ─────────────── */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --ink-core: #f3f7ff;
+  --ink-halo: #8fb8ff;
+}
+.hud > * {
+  pointer-events: auto;
+}
+.hud.enter .gutter-a {
+  animation: gutter-in-l 0.7s var(--ease-out) both;
+}
+.hud.enter .gutter-b {
+  animation: gutter-in-r 0.7s var(--ease-out) 0.06s both;
+}
+.hud.enter .hud-top {
+  animation: top-in 0.8s var(--ease-out) 0.12s both;
+}
+.left-handed .hud.enter .gutter-a {
+  animation-name: gutter-in-r;
+}
+.left-handed .hud.enter .gutter-b {
+  animation-name: gutter-in-l;
+}
+@keyframes gutter-in-l {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+@keyframes gutter-in-r {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+@keyframes top-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+/* ── top edge ── */
+
+.hud-top {
+  position: absolute;
+  left: calc(var(--lvl-x) + var(--lvl-w) / 2);
+  top: var(--meter-y);
+  width: min(calc(var(--lvl-w) * 0.66), 560px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+.hud-id {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.meter {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 18px;
+  --frac: 1;
+}
+.meter-label {
+  font-size: 8.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.meter-line {
+  position: relative;
+  flex: 1;
+  height: 16px;
+}
+.meter-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 244, 228, 0.08), rgba(255, 244, 228, 0.2));
+}
+.meter-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 1px);
+  height: 2px;
+  border-radius: 2px;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--frac));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ink-halo) 55%, transparent), var(--ink-core) 70%, #fff);
+  box-shadow: 0 0 7px var(--ink-halo), 0 0 1px #fff;
+  transition: transform 0.14s linear, background 0.4s;
+}
+.meter-ember-wrap {
+  position: absolute;
+  inset: 0;
+  transform: translateX(calc((var(--frac) - 1) * 100%));
+  transition: transform 0.14s linear;
+  pointer-events: none;
+}
+.meter-ember {
+  position: absolute;
+  right: -4px;
+  top: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 30%, var(--ink-core) 45%, transparent 72%);
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--ink-halo) 70%, transparent);
+  animation: ember 1.3s ease-in-out infinite alternate;
+}
+@keyframes ember {
+  to {
+    transform: scale(0.72);
+    opacity: 0.8;
+  }
+}
+.meter-par {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  background: var(--warm);
+  box-shadow: 0 0 5px var(--warm);
+  transition: opacity 0.4s, background 0.4s;
+}
+.meter-par span {
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 7.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 122, 0.8);
+  transition: opacity 0.4s;
+}
+.over-par .meter-par {
+  background: var(--text-faint);
+  box-shadow: none;
+}
+.over-par .meter-par span {
+  opacity: 0;
+}
+.empty-ink .meter-ember {
+  opacity: 0;
+  animation: none;
+}
+.meter.dry .meter-line {
+  animation: dry 0.45s ease;
+}
+.meter.dry .meter-fill {
+  animation: dry-red 0.9s ease;
+}
+@keyframes dry {
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+@keyframes dry-red {
+  30% {
+    box-shadow: 0 0 10px var(--rose);
+  }
+}
+.meter.refill .meter-fill {
+  animation: refill 1s ease;
+}
+@keyframes refill {
+  20% {
+    box-shadow: 0 0 16px 3px var(--ink-halo), 0 0 2px #fff;
+    height: 3px;
+  }
+}
+
+.hud-sparks {
+  display: flex;
+  gap: 5px;
+}
+.hud-spark {
+  position: relative;
+  width: 13px;
+  height: 13px;
+}
+.hud-spark svg {
+  width: 100%;
+  height: 100%;
+  fill: rgba(255, 244, 228, 0.16);
+  stroke: rgba(255, 244, 228, 0.3);
+  stroke-width: 0.8;
+  transition: fill 0.3s;
+}
+.hud-spark.got svg {
+  fill: var(--warm);
+  stroke: #fff4d6;
+  filter: drop-shadow(0 0 4px rgba(255, 200, 110, 0.9));
+  animation: spark-pop 0.65s var(--ease-spring);
+}
+.hud-spark.got::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--warm);
+  animation: spark-ring 0.7s ease-out forwards;
+}
+@keyframes spark-pop {
+  0% {
+    transform: scale(0.4) rotate(-40deg);
+  }
+  55% {
+    transform: scale(1.7) rotate(8deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes spark-ring {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* ── gutters ── */
+
+.gutter {
+  position: absolute;
+  top: calc(var(--lvl-y) + 4px);
+  height: calc(var(--lvl-h) - 8px);
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.gutter > * {
+  pointer-events: auto;
+}
+.gutter-a {
+  left: var(--sa-l);
+  width: calc(var(--space-l) - var(--sa-l));
+}
+.gutter-b {
+  right: var(--sa-r);
+  width: calc(var(--space-r) - var(--sa-r));
+}
+.left-handed .gutter-a {
+  left: auto;
+  right: var(--sa-r);
+  width: calc(var(--space-r) - var(--sa-r));
+}
+.left-handed .gutter-b {
+  right: auto;
+  left: var(--sa-l);
+  width: calc(var(--space-l) - var(--sa-l));
+}
+.gutter-spacer {
+  flex: 1;
+  pointer-events: none;
+}
+
+/* Ink capsule: one slot per ink, a ring that glides to the active one, its name beneath. */
+.ink-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.single-ink .ink-group {
+  display: none;
+}
+.inks {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 48px;
+  padding: 2px 0;
+  border-radius: 24px;
+  background: var(--glass);
+  border: 1px solid var(--hair);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  --sel: 0;
+}
+.inks-sel {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 36px;
+  height: 36px;
+  margin: 4px 0 0 -18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-halo);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ink-halo) 22%, transparent), transparent 70%);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ink-halo) 55%, transparent);
+  transform: translateY(calc(var(--sel) * 44px));
+  transition: transform 0.42s var(--ease-spring), border-color 0.3s, box-shadow 0.3s;
+  pointer-events: none;
+}
+.ink-slot {
+  position: relative;
+  width: 48px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.ink-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff, var(--ink-core) 50%, var(--ink-halo));
+  box-shadow: 0 0 8px var(--ink-halo), 0 0 2px var(--ink-halo);
+  opacity: 0.72;
+  transition: transform 0.35s var(--ease-spring), opacity 0.3s;
+}
+.ink-slot.active .ink-dot {
+  transform: scale(1.35);
+  opacity: 1;
+}
+.ink-slot:active .ink-dot {
+  transform: scale(0.9);
+}
+.ink-label {
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-halo);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--ink-halo) 60%, transparent);
+  white-space: nowrap;
+}
+.ink-label.flash {
+  animation: label-in 0.5s var(--ease-out);
+}
+@keyframes label-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Undo — tap to undo, hold to clear (a ring fills while you hold). */
+.hud-btn.undo.empty {
+  opacity: 0.4;
+}
+.hold-ring {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.hold-ring circle {
+  fill: none;
+  stroke: var(--warm);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition: stroke-dashoffset 0.15s ease, opacity 0.2s;
+}
+.undo.holding .hold-ring circle {
+  stroke-dashoffset: 0;
+  opacity: 1;
+  transition: stroke-dashoffset 0.65s linear, opacity 0.1s;
+}
+.undo.holding {
+  border-color: rgba(255, 210, 122, 0.5);
+}
+.undo.cleared {
+  animation: cleared 0.5s ease;
+}
+@keyframes cleared {
+  30% {
+    box-shadow: 0 0 0 8px rgba(255, 210, 122, 0.18), 0 0 24px rgba(255, 210, 122, 0.4);
+    color: var(--warm);
+  }
+}
+
+.hud-btn.hint.on {
+  color: var(--warm);
+  border-color: rgba(255, 210, 122, 0.55);
+  box-shadow: 0 0 18px rgba(255, 200, 110, 0.3);
+}
+.hud-btn.hint.nudge {
+  animation: nudge 1.8s ease-in-out infinite;
+}
+@keyframes nudge {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 210, 122, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(255, 210, 122, 0.16), 0 0 22px rgba(255, 210, 122, 0.35);
+    color: var(--warm);
+  }
+}
+
+/* Go ↔ Retry: a warm lantern orb that goes dark and glassy once Wick is walking. */
+.go-btn {
+  position: relative;
+  flex: none;
+  width: clamp(50px, calc(100% - 8px), 64px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transition: opacity 0.4s, transform 0.4s var(--ease-spring);
+}
+.go-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #2a1606;
+  background: radial-gradient(circle at 38% 30%, #fff8e4 0%, #ffd58c 38%, #f59b47 100%);
+  box-shadow: 0 0 0 1px rgba(255, 226, 170, 0.6), 0 0 28px rgba(255, 164, 72, 0.5), inset 0 -5px 12px rgba(150, 60, 10, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.6);
+  transition: background 0.45s ease, box-shadow 0.45s ease, color 0.35s, transform 0.35s var(--ease-spring);
+}
+.go-btn:active .go-face {
+  transform: scale(0.9);
+}
+.go-ico {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-bottom: 8px;
+  transition: opacity 0.3s, transform 0.45s var(--ease-spring);
+}
+.go-ico svg {
+  width: 26px;
+  height: 26px;
+}
+.go-play svg {
+  transform: translateX(1.5px);
+}
+.go-retry {
+  opacity: 0;
+  transform: rotate(-120deg) scale(0.6);
+}
+.go-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  text-align: center;
+  font-size: 7.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.go-label b {
+  font-weight: inherit;
+  transition: opacity 0.3s;
+}
+.go-label .l-retry {
+  position: absolute;
+  left: 0;
+  right: 0;
+  opacity: 0;
+}
+.hud[data-phase='running'] .go-face,
+.hud[data-phase='dead'] .go-face {
+  color: var(--text);
+  background: radial-gradient(circle at 40% 30%, rgba(60, 50, 80, 0.85), rgba(14, 10, 22, 0.9));
+  box-shadow: 0 0 0 1px var(--hair-strong), 0 0 20px rgba(143, 184, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.hud[data-phase='running'] .go-play,
+.hud[data-phase='dead'] .go-play {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+}
+.hud[data-phase='running'] .go-retry,
+.hud[data-phase='dead'] .go-retry {
+  opacity: 1;
+  transform: none;
+}
+.hud[data-phase='running'] .l-go,
+.hud[data-phase='dead'] .l-go {
+  opacity: 0;
+}
+.hud[data-phase='running'] .l-retry,
+.hud[data-phase='dead'] .l-retry {
+  opacity: 1;
+}
+.hud[data-phase='won'] .go-btn {
+  opacity: 0;
+  transform: scale(0.7);
+  pointer-events: none;
+}
+.hud[data-phase='won'] .gutter > :not(.go-btn) {
+  opacity: 0.35;
+  transition: opacity 0.6s;
+}
+.go-btn.pressed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--warm);
+  animation: go-ripple 0.7s var(--ease-out) forwards;
+  pointer-events: none;
+}
+@keyframes go-ripple {
+  from {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+/* Hurry levels: a ring that runs out before Wick sets off. */
+.go-count {
+  position: absolute;
+  inset: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  transform: rotate(-90deg) scaleY(-1);
+  pointer-events: none;
+  display: none;
+}
+.go-count circle {
+  fill: none;
+  stroke: var(--warm);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+}
+.hud[data-phase='plan'] .go-btn.hurry .go-count {
+  display: block;
+}
+.go-btn.hurry .go-count circle {
+  animation: countdown var(--hurry, 3s) linear forwards;
+}
+.hud.paused .go-count circle {
+  animation-play-state: paused;
+}
+@keyframes countdown {
+  to {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* ── level intro card ── */
+
+.level-intro {
+  position: absolute;
+  left: calc(var(--lvl-x) + var(--lvl-w) / 2);
+  top: calc(var(--lvl-y) + var(--lvl-h) * 0.17);
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  pointer-events: none !important;
+  opacity: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+.level-intro.show {
+  animation: intro-in 0.9s var(--ease-out) forwards;
+}
+.level-intro.show.hide {
+  animation: intro-out 0.7s ease forwards;
+}
+.li-kicker {
+  display: flex;
+  gap: 8px;
+  font-size: 9.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+}
+.li-kicker i {
+  font-style: normal;
+  color: var(--text-faint);
+}
+.li-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-size: clamp(26px, calc(var(--lvl-w) * 0.055), 50px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.75), 0 0 2px rgba(0, 0, 0, 0.5);
+}
+.li-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.li-rule i {
+  display: block;
+  width: 46px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--warm));
+  transform: scaleX(0);
+  transform-origin: 100% 50%;
+}
+.li-rule i:last-child {
+  background: linear-gradient(90deg, var(--warm), transparent);
+  transform-origin: 0 50%;
+}
+.li-rule svg {
+  width: 9px;
+  height: 9px;
+  fill: var(--warm);
+  filter: drop-shadow(0 0 4px var(--warm));
+}
+.level-intro.show .li-rule i {
+  animation: rule-in 0.9s var(--ease-out) 0.35s forwards;
+}
+.li-hurry {
+  margin-top: 2px;
+  font-family: var(--hand);
+  font-size: 19px;
+  color: #ffd9a0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+}
+@keyframes rule-in {
+  to {
+    transform: none;
+  }
+}
+@keyframes intro-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes intro-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+}
+
+/* ── notes & the hint question ── */
+
+.hud-note {
+  position: absolute;
+  max-width: 180px;
+  font-family: var(--hand);
+  font-size: 19px;
+  line-height: 1.1;
+  color: #ffe6b8;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transform: translateY(4px) rotate(-2deg);
+  transition: opacity 0.35s, transform 0.35s var(--ease-out);
+  pointer-events: none !important;
+}
+.hud-note.show {
+  opacity: 1;
+  transform: rotate(-2deg);
+}
+.hud-note[data-side='a'] {
+  left: calc(var(--space-l) + 10px);
+  bottom: calc(100% - var(--lvl-y) - var(--lvl-h) + 16px);
+}
+.hud-note[data-side='b'] {
+  right: calc(var(--space-r) + 10px);
+  top: calc(var(--lvl-y) + 62px);
+  text-align: right;
+}
+.left-handed .hud-note[data-side='a'] {
+  left: auto;
+  right: calc(var(--space-r) + 10px);
+  text-align: right;
+}
+.left-handed .hud-note[data-side='b'] {
+  right: auto;
+  left: calc(var(--space-l) + 10px);
+  text-align: left;
+}
+
+.hint-ask {
+  position: absolute;
+  right: calc(var(--space-r) + 8px);
+  top: calc(var(--lvl-y) + 44px);
+  width: 232px;
+  padding: 14px 16px 12px;
+  border-radius: 16px;
+  background: var(--glass-strong);
+  border: 1px solid var(--hair);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateX(8px) scale(0.97);
+  transform-origin: 100% 0;
+  transition: opacity 0.25s, transform 0.3s var(--ease-spring);
+}
+.hint-ask.show {
+  opacity: 1;
+  transform: none;
+}
+.left-handed .hint-ask {
+  right: auto;
+  left: calc(var(--space-l) + 8px);
+  transform-origin: 0 0;
+}
+.hint-ask p {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.25;
+}
+.hint-ask-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

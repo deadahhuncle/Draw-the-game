@@ -1,6 +1,6 @@
 // Audio engine facade. Everything is synthesized with Web Audio at runtime (see docs/DESIGN.md §8).
 // The rest of the game only talks to this interface.
-import type { InkType, SimEvent, WorldKey } from '../core/types';
+import type { InkType, LevelDef, SimEvent, WorldKey } from '../core/types';
 
 export type AudioMode = 'menu' | 'plan' | 'run' | 'win';
 export type UiSound = 'tap' | 'back' | 'open' | 'close' | 'select' | 'star' | 'unlock' | 'deny';
@@ -9,6 +9,11 @@ export interface AudioEngine {
   /** Must be called from a user gesture (creates/resumes the AudioContext). Safe to call repeatedly. */
   unlock(): void;
   setWorld(key: WorldKey): void;
+  /**
+   * The level now on stage (call right after setWorld), or null for menus. Drives ambience beds
+   * (rain, wind, river) and Daybreak's brightening. setWorld() alone clears it.
+   */
+  setLevel(level: LevelDef | null): void;
   setMode(mode: AudioMode): void;
   onEvent(e: SimEvent): void;
   /** The pen instrument: call on every pen move while drawing; `down=false` releases it. y in world units. */
@@ -22,6 +27,7 @@ export interface AudioEngine {
 class SilentAudio implements AudioEngine {
   unlock(): void {}
   setWorld(): void {}
+  setLevel(): void {}
   setMode(): void {}
   onEvent(): void {}
   pen(): void {}

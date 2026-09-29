@@ -63,6 +63,7 @@ export class Session {
     this.prevY = this.sim.wick.y;
     this.autoT = level.autoStart ?? -1;
     audio.setWorld(world.key);
+    audio.setLevel(level);
     audio.setMode('plan');
   }
 

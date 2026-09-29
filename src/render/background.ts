@@ -1,165 +1,218 @@
-import { H, W } from '../core/constants';
+import { W } from '../core/constants';
+import { pointInPolygon } from '../core/math';
 import { Rng } from '../core/rng';
-import type { Palette } from './palettes';
+import type { LevelDef, WorldKey } from '../core/types';
+import { levelIndexInWorld } from '../levels/index';
+import { PALETTES, type Palette } from './palettes';
 import type { View } from './view';
+import { makeCanvas } from './world/kit';
+import { Skyline, type PaintEnv } from './world/kit';
+import type { Scene, SceneState } from './world/scene';
+import { createScene } from './world/worlds';
 
-interface Star {
-  x: number;
-  y: number;
-  r: number;
-  tw: number;
-  ph: number;
+export { makeCanvas };
+
+export interface BackgroundOptions {
+  world?: WorldKey;
+  level?: LevelDef;
 }
 
-interface Mote {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  ph: number;
-  r: number;
-}
+/** Background caches never need more than 2× — they are soft and hazy by design. */
+const MAX_BG_RES = 2;
 
 /**
- * Sky, orb, far hills and mist — pre-rendered once per level/resize into an offscreen canvas.
- * Twinkling stars and drifting motes are drawn live on top (cheap).
+ * The world behind the level: sky, far ink-wash layers and the void, pre-rendered per level/resize
+ * into offscreen caches; the world's scene adds cheap live touches (stars, motes, birds, rain,
+ * lightning, river shimmer) on top, and mist in front of everything via `drawFront`.
  */
 export class Background {
-  private cache: HTMLCanvasElement | OffscreenCanvas | null = null;
-  private stars: Star[] = [];
-  private motes: Mote[] = [];
-  private key = '';
+  private sky: HTMLCanvasElement | null = null;
+  private far: HTMLCanvasElement | null = null;
+  private scene: Scene | null = null;
+  private built = { w: 0, h: 0, dpr: 0, scale: 0, ox: 0, oy: 0 };
+  private dirty = true;
+  private world: WorldKey;
+  private progress = 0;
+  private finale = false;
+  private state: SceneState = { finale: -1, flash: 0, strikes: 0 };
+  private strikesSeen = 0;
+  /** Optional hook: a lightning strike just happened (strength 0..1) — e.g. for thunder. */
+  onLightning: ((strength: number) => void) | null = null;
+  private winClock = -1;
+  private openings: [number, number][] = [];
+  private solids: { x0: number; y0: number; x1: number; y1: number }[] = [];
 
-  constructor(private palette: Palette, private seed: number) {}
+  constructor(
+    private palette: Palette,
+    private seed: number,
+    opts: BackgroundOptions = {},
+  ) {
+    this.world = opts.world ?? worldForPalette(palette);
+    if (opts.level) this.setLevel(opts.level);
+  }
 
   setPalette(p: Palette, seed: number): void {
     this.palette = p;
     this.seed = seed;
-    this.key = '';
+    this.world = worldForPalette(p);
+    this.dirty = true;
+  }
+
+  /** Where this level sits in its world (drives the dawn in Daybreak, finale sunrise on the last lamp). */
+  setLevel(level: LevelDef): void {
+    this.openings = findOpenings(level);
+    this.solids = level.terrain.map((t) => {
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -Infinity;
+      let y1 = -Infinity;
+      for (const q of t.pts) {
+        x0 = Math.min(x0, q.x);
+        y0 = Math.min(y0, q.y);
+        x1 = Math.max(x1, q.x);
+        y1 = Math.max(y1, q.y);
+      }
+      return { x0, y0, x1, y1 };
+    });
+    try {
+      const { index, count } = levelIndexInWorld(level);
+      this.progress = count > 1 ? Math.max(0, index) / (count - 1) : 0.35;
+      this.finale = this.world === 'daybreak' && index >= 0 && index === count - 1;
+    } catch {
+      this.progress = 0;
+      this.finale = false;
+    }
+    this.dirty = true;
+  }
+
+  /** Lightning intensity right now (0..1) — for anything that wants to react (audio, UI). */
+  get flash(): number {
+    return this.state.flash;
+  }
+
+  /** True when this level's win plays the dawn. */
+  get isFinale(): boolean {
+    return this.finale;
+  }
+
+  /** Called by the renderer when the lamp is lit. Plays the sunrise on the journey's last lamp. */
+  onWin(): void {
+    if (this.finale && this.winClock < 0) this.winClock = 0;
+  }
+
+  /** Called on retry/reset. */
+  onReset(): void {
+    this.winClock = -1;
+    this.state.finale = -1;
   }
 
   private build(view: View): void {
-    const { cssW, cssH, dpr } = view;
-    const cw = Math.max(1, Math.round(cssW * dpr));
-    const ch = Math.max(1, Math.round(cssH * dpr));
-    const c = makeCanvas(cw, ch);
-    const ctx = c.getContext('2d') as CanvasRenderingContext2D;
-    const p = this.palette;
-    const rng = new Rng(this.seed);
+    const r = Math.min(view.dpr, MAX_BG_RES);
+    const cw = Math.max(1, Math.round(view.cssW * r));
+    const ch = Math.max(1, Math.round(view.cssH * r));
+    const v = view.visible;
+    const vis = { x0: v.x0 - 24, y0: v.y0 - 24, x1: v.x1 + 24, y1: v.y1 + 24 };
+    const env: PaintEnv = {
+      vis,
+      rng: new Rng(this.seed ^ 0x5eed),
+      p: this.palette,
+      seed: this.seed,
+      progress: this.progress,
+      sky: new Skyline(vis.x0 - 50, vis.x1 + 50),
+      px: r * view.scale,
+      finale: this.finale,
+      openings: this.openings,
+      solids: this.solids,
+    };
+    const scene = createScene(this.world, env, this.state);
+    const k = r * view.scale;
+    const apply = (c: CanvasRenderingContext2D) => c.setTransform(k, 0, 0, k, view.ox * r, view.oy * r);
 
-    // Sky (screen space).
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const horizon = view.toScreen(0, H * 0.78).y;
-    const g = ctx.createLinearGradient(0, 0, 0, Math.max(horizon, 1));
-    p.sky.forEach((col, i) => g.addColorStop(i / (p.sky.length - 1), col));
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, cssW, cssH);
+    const sky = makeCanvas(cw, ch);
+    const sctx = sky.getContext('2d')!;
+    apply(sctx);
+    scene.paintSky(sctx);
 
-    // World-space layers.
-    view.apply(ctx);
-    const vis = view.visible;
+    const far = makeCanvas(cw, ch);
+    const fctx = far.getContext('2d')!;
+    apply(fctx);
+    scene.paintFar(fctx);
 
-    // Orb halo + disc.
-    const o = p.orb;
-    const halo = ctx.createRadialGradient(o.x, o.y, o.r * 0.6, o.x, o.y, o.r * 5);
-    halo.addColorStop(0, o.glow);
-    halo.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = halo;
-    ctx.fillRect(vis.x0, vis.y0, vis.x1 - vis.x0, vis.y1 - vis.y0);
-    const disc = ctx.createRadialGradient(o.x - o.r * 0.3, o.y - o.r * 0.3, o.r * 0.1, o.x, o.y, o.r);
-    disc.addColorStop(0, '#ffffff');
-    disc.addColorStop(0.35, o.color);
-    disc.addColorStop(1, o.color);
-    ctx.globalAlpha = 0.92;
-    ctx.fillStyle = disc;
-    ctx.beginPath();
-    ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    // Hills: layered ridgelines, far → near.
-    const n = p.hills.length;
-    for (let i = 0; i < n; i++) {
-      const base = H * (0.5 + i * 0.1);
-      const amp = 40 + i * 22;
-      const f1 = rng.range(0.002, 0.004);
-      const f2 = rng.range(0.006, 0.011);
-      const ph1 = rng.range(0, 10);
-      const ph2 = rng.range(0, 10);
-      ctx.beginPath();
-      ctx.moveTo(vis.x0 - 10, vis.y1 + 10);
-      for (let x = vis.x0 - 10; x <= vis.x1 + 20; x += 8) {
-        const y = base - amp * (0.6 * Math.sin(x * f1 + ph1) + 0.4 * Math.sin(x * f2 + ph2)) - amp * 0.4;
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(vis.x1 + 20, vis.y1 + 10);
-      ctx.closePath();
-      const hg = ctx.createLinearGradient(0, base - amp * 1.4, 0, H);
-      hg.addColorStop(0, p.hills[i]);
-      hg.addColorStop(1, shade(p.hills[i], -0.25));
-      ctx.fillStyle = hg;
-      ctx.fill();
-      // Atmospheric haze between layers.
-      const mg = ctx.createLinearGradient(0, base - amp, 0, base + 120);
-      mg.addColorStop(0, 'rgba(0,0,0,0)');
-      mg.addColorStop(1, p.mist);
-      ctx.fillStyle = mg;
-      ctx.fillRect(vis.x0, base - amp, vis.x1 - vis.x0, 200);
+    if (scene.split) {
+      this.far = far;
+    } else {
+      sctx.setTransform(1, 0, 0, 1, 0, 0);
+      sctx.drawImage(far, 0, 0);
+      this.far = null;
+      far.width = far.height = 1;
     }
-
-    this.cache = c;
-
-    // Live elements.
-    this.stars = [];
-    const count = Math.round(140 * p.stars);
-    for (let i = 0; i < count; i++) {
-      this.stars.push({ x: rng.range(vis.x0, vis.x1), y: rng.range(vis.y0, H * 0.55), r: rng.range(0.6, 1.8), tw: rng.range(0.5, 2.2), ph: rng.range(0, 6.28) });
-    }
-    this.motes = [];
-    for (let i = 0; i < 22; i++) {
-      this.motes.push({ x: rng.range(vis.x0, vis.x1), y: rng.range(H * 0.2, H * 0.95), vx: rng.range(-6, 6), vy: rng.range(-10, -3), ph: rng.range(0, 6.28), r: rng.range(1, 2.4) });
-    }
+    this.sky = sky;
+    scene.initLive();
+    this.scene = scene;
   }
 
   draw(ctx: CanvasRenderingContext2D, view: View, time: number, dt: number, motion: number): void {
-    const key = `${view.cssW}x${view.cssH}@${view.dpr}:${view.scale.toFixed(4)}`;
-    if (key !== this.key || !this.cache) {
+    const b = this.built;
+    // Rebuild on real layout changes only (the renderer nudges ox/oy by a few px for camera shake).
+    if (this.dirty || !this.sky || !this.scene || b.w !== view.cssW || b.h !== view.cssH || b.dpr !== view.dpr || Math.abs(b.scale - view.scale) > 1e-5 || Math.abs(b.ox - view.ox) > 12 || Math.abs(b.oy - view.oy) > 12) {
       this.build(view);
-      this.key = key;
+      this.built = { w: view.cssW, h: view.cssH, dpr: view.dpr, scale: view.scale, ox: view.ox, oy: view.oy };
+      this.dirty = false;
     }
+    if (this.winClock >= 0) {
+      this.winClock += dt;
+      this.state.finale = this.winClock;
+    }
+    const scene = this.scene!;
+    const pw = Math.round(view.cssW * view.dpr);
+    const ph = Math.round(view.cssH * view.dpr);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(this.cache as CanvasImageSource, 0, 0);
+    ctx.drawImage(this.sky!, 0, 0, pw, ph);
     view.apply(ctx);
-    // Stars.
-    ctx.fillStyle = '#FFFFFF';
-    for (const s of this.stars) {
-      const a = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(time * s.tw + s.ph)) * (motion > 0 ? 1 : 0.7);
-      ctx.globalAlpha = a * 0.9;
-      ctx.fillRect(s.x - s.r / 2, s.y - s.r / 2, s.r, s.r);
+    scene.liveSky(ctx, time, dt, motion);
+    if (this.far) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(this.far, 0, 0, pw, ph);
+      view.apply(ctx);
     }
-    // Motes.
-    const vis = view.visible;
-    ctx.fillStyle = this.palette.accent;
-    for (const m of this.motes) {
-      m.x += (m.vx + Math.sin(time * 0.7 + m.ph) * 8) * dt * motion;
-      m.y += m.vy * dt * motion;
-      if (m.y < vis.y0 - 10) m.y = vis.y1 + 10;
-      if (m.x < vis.x0 - 10) m.x = vis.x1 + 10;
-      if (m.x > vis.x1 + 10) m.x = vis.x0 - 10;
-      ctx.globalAlpha = 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(time * 1.7 + m.ph));
-      ctx.beginPath();
-      ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-      ctx.fill();
+    scene.live(ctx, time, dt, motion);
+    if (this.state.strikes !== this.strikesSeen) {
+      this.strikesSeen = this.state.strikes;
+      this.onLightning?.(motion > 0.5 ? 1 : 0.3);
     }
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Mist, weather and light washes in front of the level. Call after entities, before particles/UI. */
+  drawFront(ctx: CanvasRenderingContext2D, view: View, time: number, dt: number, motion: number): void {
+    if (!this.scene) return;
+    view.apply(ctx);
+    this.scene.front(ctx, time, dt, motion);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
   }
 }
 
-export function makeCanvas(w: number, h: number): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  return c;
+/** Columns of the page where nothing solid covers the lower world: where the void shows. */
+function findOpenings(level: LevelDef): [number, number][] {
+  const out: [number, number][] = [];
+  let start = -1;
+  const step = 16;
+  for (let x = 0; x <= W; x += step) {
+    const open = !level.terrain.some((t) => t.mat !== 'hazard' && (pointInPolygon({ x, y: 660 }, t.pts) || pointInPolygon({ x, y: 700 }, t.pts)));
+    if (open && start < 0) start = x;
+    if ((!open || x + step > W) && start >= 0) {
+      out.push([start, open ? x : x - step]);
+      start = -1;
+    }
+  }
+  return out;
+}
+
+function worldForPalette(p: Palette): WorldKey {
+  for (const k of Object.keys(PALETTES) as WorldKey[]) if (PALETTES[k] === p) return k;
+  return 'dusk';
 }
 
 /** Lighten (amt > 0) or darken (amt < 0) a #rrggbb colour. */

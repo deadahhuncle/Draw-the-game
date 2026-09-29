@@ -1,0 +1,256 @@
+/* ─────────────── title ─────────────── */
+
+.title-screen {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  outline: none;
+  --logo-x: 20vw;
+  --logo-y: 20vh;
+  --logo-w: 60vw;
+  --logo-h: 20vh;
+  --px: 1;
+}
+.title-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 70% at 50% 40%, transparent 40%, rgba(8, 5, 14, 0.42) 100%), linear-gradient(180deg, rgba(8, 5, 14, 0.35), transparent 38%);
+}
+
+.logo {
+  position: absolute;
+  left: var(--logo-x);
+  top: var(--logo-y);
+  width: var(--logo-w);
+  height: var(--logo-h);
+  margin: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease, transform 0.9s var(--ease-out);
+}
+.logo svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.logo-trace path {
+  fill: none;
+  stroke-width: 1.15px;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: opacity 1.6s ease 0.2s;
+}
+.lt-ink {
+  stroke: #e4ecff;
+}
+.lt-light {
+  stroke: #ffe2b0;
+}
+.title-screen.written .logo-trace path {
+  opacity: 0.28;
+}
+.lt-spark {
+  fill: #fff;
+  opacity: 0;
+}
+.logo-nib {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.nib-halo {
+  fill: rgba(255, 214, 150, 0.22);
+}
+.nib-core {
+  fill: #fff;
+}
+.logo-fill g {
+  opacity: 0;
+}
+.logo-glow {
+  will-change: opacity;
+  filter: blur(calc(var(--px) * 5px));
+  opacity: 0;
+  transition: opacity 1.8s ease 0.1s;
+}
+.lg-ink {
+  fill: rgba(160, 196, 255, 0.45);
+}
+.lg-light {
+  fill: rgba(255, 176, 84, 0.95);
+}
+.title-screen.written .logo-glow {
+  opacity: 0.85;
+  animation: breathe 5s ease-in-out 2s infinite alternate;
+}
+@keyframes breathe {
+  to {
+    opacity: 0.55;
+  }
+}
+.title-screen.instant .logo-glow,
+.title-screen.instant .logo-trace path {
+  transition: none;
+}
+
+.tagline {
+  position: absolute;
+  left: var(--tag-x, 50%);
+  top: var(--tag-y, 60%);
+  margin: 0;
+  transform: translate(-50%, 6px);
+  font-size: 10px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(255, 240, 220, 0.72);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity 1.2s ease 0.5s, transform 1.2s var(--ease-out) 0.5s;
+  pointer-events: none;
+}
+.title-screen.ready .tagline {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.tap-hint {
+  position: absolute;
+  left: var(--tag-x, 50%);
+  top: var(--tap-y, 80%);
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-dim);
+  opacity: 0;
+  pointer-events: none;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+}
+.title-screen.ready .tap-hint {
+  animation: tap-breathe 3.2s ease-in-out 1.6s infinite;
+}
+.tap-sub {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-faint);
+}
+@keyframes tap-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.title-gear {
+  position: absolute;
+  top: calc(var(--sa-t) + 12px);
+  right: calc(var(--sa-r) + 14px);
+  opacity: 0;
+  transition: opacity 0.8s ease 1s, transform 0.25s var(--ease-spring);
+}
+.title-screen.ready .title-gear {
+  opacity: 1;
+}
+
+/* First-launch intro: three handwritten lines */
+.intro-on .logo {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+.intro-on .tagline,
+.intro-on .tap-hint,
+.intro-on .title-gear {
+  opacity: 0 !important;
+  animation: none !important;
+  transition: opacity 0.4s;
+}
+.intro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 0 28px 12vh;
+  background: radial-gradient(ellipse at 50% 40%, rgba(8, 6, 14, 0.2), rgba(8, 6, 14, 0.62));
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  cursor: pointer;
+  z-index: 5;
+}
+.intro.show {
+  opacity: 1;
+}
+.intro.out {
+  opacity: 0;
+}
+.intro-lines {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+.intro-line {
+  --chars: 30;
+  margin: 0;
+  font-family: var(--hand);
+  font-weight: 500;
+  font-size: clamp(24px, 6.4vh, 38px);
+  line-height: 1.2;
+  color: #fff3dc;
+  text-shadow: 0 0 18px rgba(255, 200, 120, 0.35), 0 2px 10px rgba(0, 0, 0, 0.7);
+  clip-path: inset(-30% 100% -30% 0);
+  -webkit-clip-path: inset(-30% 100% -30% 0);
+}
+.intro-line.write {
+  animation: write-in calc(var(--chars) * 38ms + 400ms) cubic-bezier(0.3, 0.1, 0.4, 1) forwards;
+}
+.intro-line.done {
+  animation: none;
+  clip-path: none;
+  -webkit-clip-path: none;
+}
+@keyframes write-in {
+  to {
+    clip-path: inset(-30% -4% -30% 0);
+    -webkit-clip-path: inset(-30% -4% -30% 0);
+  }
+}
+.intro-cont {
+  margin: 8px 0 0;
+  font-size: 9.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.8s;
+}
+.intro-cont.show {
+  opacity: 1;
+  animation: tap-breathe 3s ease-in-out 1s infinite;
+}
+.intro-skip {
+  position: absolute;
+  top: calc(var(--sa-t) + 14px);
+  right: calc(var(--sa-r) + 16px);
+}
+
+/* Portrait title: the logo sits higher; the tap hint rests on the ground. */
+.portrait .tagline {
+  letter-spacing: 0.26em;
+  font-size: 9px;
+}

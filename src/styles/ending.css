@@ -1,0 +1,295 @@
+/* ─────────────── dawn: ending & credits ─────────────── */
+
+.ending {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #0b0a1e;
+  cursor: pointer;
+  --k: 1;
+}
+.e-sky {
+  position: absolute;
+  inset: 0;
+}
+.e-night {
+  background: linear-gradient(180deg, #07071a 0%, #1b1638 55%, #3a2952 100%);
+}
+.e-rose {
+  background: linear-gradient(180deg, #221c46 0%, #6d4577 42%, #d98479 78%, #ffc38c 100%);
+  opacity: 0;
+  transition: opacity 6s ease 0.8s;
+}
+.e-gold {
+  background: linear-gradient(180deg, #4b4282 0%, #c4808c 38%, #ffbf8a 66%, #ffe7bb 100%);
+  opacity: 0;
+  transition: opacity 7s ease 5s;
+}
+.rise .e-rose,
+.rise .e-gold {
+  opacity: 1;
+}
+.risen .e-rose,
+.risen .e-gold {
+  transition-duration: 1.2s;
+  transition-delay: 0s;
+}
+.e-stars {
+  position: absolute;
+  inset: 0 0 40% 0;
+  background-image: radial-gradient(1.2px 1.2px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 27% 34%, #fff, transparent), radial-gradient(1.4px 1.4px at 44% 12%, #fff, transparent), radial-gradient(1px 1px at 61% 28%, #fff, transparent), radial-gradient(1.2px 1.2px at 78% 16%, #fff, transparent), radial-gradient(1px 1px at 90% 40%, #fff, transparent), radial-gradient(1px 1px at 35% 52%, #fff, transparent), radial-gradient(1.3px 1.3px at 70% 55%, #fff, transparent), radial-gradient(1px 1px at 8% 60%, #fff, transparent);
+  opacity: 0.8;
+  transition: opacity 7s ease 1s;
+}
+.rise .e-stars {
+  opacity: 0;
+}
+.e-sun {
+  position: absolute;
+  left: 38%;
+  top: 78%;
+  width: 0;
+  height: 0;
+  transform: translateY(18vh);
+  transition: transform 11s cubic-bezier(0.25, 0.6, 0.3, 1) 0.4s;
+}
+.rise .e-sun {
+  transform: translateY(-30vh);
+}
+.risen .e-sun {
+  transition-duration: 1.4s;
+  transition-delay: 0s;
+}
+.e-disc {
+  position: absolute;
+  left: calc(-60px * var(--k));
+  top: calc(-60px * var(--k));
+  width: calc(120px * var(--k));
+  height: calc(120px * var(--k));
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffaf0 0%, #ffecc2 45%, #ffd08a 68%, rgba(255, 190, 110, 0) 72%);
+  box-shadow: 0 0 120px 40px rgba(255, 200, 130, 0.35);
+}
+.e-rays {
+  position: absolute;
+  left: -60vmax;
+  top: -60vmax;
+  width: 120vmax;
+  height: 120vmax;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 236, 190, 0.12) 0deg 4deg, transparent 4deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 5%, transparent 60%);
+  mask-image: radial-gradient(circle, #000 5%, transparent 60%);
+  opacity: 0;
+  transition: opacity 6s ease 4s;
+  animation: rays 90s linear infinite;
+}
+.rise .e-rays {
+  opacity: 1;
+}
+@keyframes rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.e-hills {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.e-far {
+  fill: #2c1c3c;
+  transition: fill 8s ease 3s;
+}
+.rise .e-far {
+  fill: #8a5470;
+}
+.e-near {
+  fill: #140c1a;
+  transition: fill 8s ease 3s;
+}
+.rise .e-near {
+  fill: #3a1f33;
+}
+.e-post {
+  fill: none;
+  stroke: #120a16;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.e-body {
+  fill: #ffdca0;
+}
+.e-rib {
+  fill: none;
+  stroke: rgba(120, 60, 20, 0.45);
+  stroke-width: 0.6;
+}
+.e-cap {
+  fill: none;
+  stroke: #120a16;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.e-lamp-glow {
+  animation: lamp-flicker 2.6s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.ending .wick-sprite {
+  z-index: 1;
+}
+
+.e-time {
+  position: absolute;
+  top: calc(var(--sa-t) + 18px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(255, 244, 228, 0.7);
+  animation: fade-in 2s ease 0.5s both;
+}
+.e-lines {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 24%;
+  height: 60px;
+}
+.e-line {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  margin: 0;
+  text-align: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-size: clamp(22px, 6.4vh, 42px);
+  line-height: 1.15;
+  color: #fff8ec;
+  text-shadow: 0 2px 22px rgba(60, 20, 40, 0.55);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.1s ease, transform 1.4s var(--ease-out);
+}
+.e-line.show {
+  opacity: 1;
+  transform: none;
+}
+.e-credits {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 0 24px 17vh;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.4s ease 0.3s;
+}
+.credits .e-credits {
+  opacity: 1;
+  pointer-events: auto;
+}
+.e-thanks {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-size: clamp(24px, 7vh, 46px);
+  line-height: 1.1;
+  color: #fffaf0;
+  text-shadow: 0 2px 26px rgba(90, 30, 50, 0.6);
+}
+.e-roll {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 12px 26px 14px;
+  border-radius: 18px;
+  background: rgba(40, 20, 40, 0.28);
+  border: 1px solid rgba(255, 244, 228, 0.18);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.e-roll p {
+  margin: 0;
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 244, 228, 0.8);
+}
+.e-logo {
+  margin: 0 0 2px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-size: 30px;
+  line-height: 1;
+  color: #fffaf0;
+}
+.e-logo span {
+  color: #ffe0a0;
+  text-shadow: 0 0 16px rgba(255, 180, 90, 0.8);
+}
+.e-roll .e-made {
+  margin-top: 6px;
+  font-family: var(--hand);
+  font-size: 24px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #fff4dc;
+}
+.e-roll .e-small {
+  max-width: 340px;
+  font-size: 8.5px;
+  line-height: 1.6;
+  letter-spacing: 0.18em;
+  color: rgba(255, 244, 228, 0.66);
+}
+.e-roll .e-stars {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  background: none;
+  opacity: 1;
+}
+.e-roll .e-stars svg {
+  width: 11px;
+  height: 11px;
+  fill: #ffe0a0;
+}
+.e-actions {
+  margin-top: 4px;
+}
+.e-skip {
+  position: absolute;
+  top: calc(var(--sa-t) + 12px);
+  right: calc(var(--sa-r) + 14px);
+  color: rgba(255, 244, 228, 0.8);
+  border-color: rgba(255, 244, 228, 0.3);
+}
+.e-time {
+  transition: opacity 0.8s;
+}
+.credits .e-time {
+  opacity: 0;
+  animation: none;
+}
+.credits .e-skip {
+  opacity: 0;
+  pointer-events: none;
+}
