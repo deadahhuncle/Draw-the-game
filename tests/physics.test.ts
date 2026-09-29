@@ -81,6 +81,38 @@ describe('Wick controller', () => {
     expect(apex).toBeLessThan(expected * 1.1);
   });
 
+  it('a spring lying on the ground launches Wick forward, not back', () => {
+    const sim = new Simulation(lvl({}));
+    sim.drawStroke('spring', [
+      { x: 300, y: 604 },
+      { x: 420, y: 604 },
+    ]);
+    sim.go();
+    run(sim, 4);
+    expect(sim.wick.facing).toBe(1);
+    expect(sim.wick.x).toBeGreaterThan(500);
+  });
+
+  it('a ramp feeding a down-sloping spring is a forward catapult', () => {
+    const sim = new Simulation(lvl({}));
+    const r = Math.PI / 4;
+    sim.drawStroke('moon', [
+      { x: 220, y: 604 },
+      { x: 300, y: 544 },
+    ]);
+    sim.drawStroke('spring', [
+      { x: 300, y: 544 },
+      { x: 300 + Math.cos(r) * 70, y: 544 + Math.sin(r) * 70 },
+    ]);
+    sim.go();
+    let maxX = 0;
+    for (let i = 0; i < 120 * 4 && sim.phase === 'running'; i++) {
+      sim.step();
+      maxX = Math.max(maxX, sim.wick.x);
+    }
+    expect(maxX).toBeGreaterThan(650);
+  });
+
   it('comet ink drives Wick in the drawing direction', () => {
     const sim = new Simulation(lvl({ start: { x: 600, y: 600 } }));
     sim.drawStroke('comet', [

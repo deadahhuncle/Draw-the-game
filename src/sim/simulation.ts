@@ -600,16 +600,21 @@ export class Simulation {
       const vn = w.vx * c.nx + w.vy * c.ny;
       if (c.seg.mat === 'bounce') {
         if (!bounced && vn < 80) {
+          // Springs push along their *face* normal, so brushing a rounded end-cap (walking onto a spring
+          // lying on the ground, or onto the end of a tilted one) still launches the way the surface faces.
+          // Only a hit squarely on the tip (> 75° off the face) uses the radial contact normal.
+          const n = this.bounceNormal(c, w);
+          const bvn = w.vx * n.x + w.vy * n.y;
           const bs = c.seg.bounce ?? BOUNCE_SPEED;
-          const tvx = w.vx - c.nx * vn;
-          const tvy = w.vy - c.ny * vn;
-          w.vx = tvx + c.nx * bs;
-          w.vy = tvy + c.ny * bs;
+          const tvx = w.vx - n.x * bvn;
+          const tvy = w.vy - n.y * bvn;
+          w.vx = tvx + n.x * bs;
+          w.vy = tvy + n.y * bs;
           if (w.vy < -bs) w.vy = -bs;
           bounced = true;
           w.noSnap = LAUNCH_NO_SNAP;
           if (Math.abs(w.vx) > 40) w.facing = w.vx > 0 ? 1 : -1;
-          this.emit({ type: 'bounce', x: w.x - c.nx * WICK_R, y: w.y - c.ny * WICK_R, nx: c.nx, ny: c.ny, speed: bs, ink: c.seg.owner.kind === 'stroke' });
+          this.emit({ type: 'bounce', x: w.x - c.nx * WICK_R, y: w.y - c.ny * WICK_R, nx: n.x, ny: n.y, speed: bs, ink: c.seg.owner.kind === 'stroke' });
         }
         continue;
       }
@@ -712,6 +717,30 @@ export class Simulation {
     } else if (this.time - w.stuckT > STUCK_TIME) {
       this.die('stuck');
     }
+  }
+
+  private bounceNormal(c: Contact, w: WickState): Vec {
+    const s = c.seg;
+    const sx = s.bx - s.ax;
+    const sy = s.by - s.ay;
+    const l = Math.hypot(sx, sy);
+    if (l < 1e-6) return { x: c.nx, y: c.ny };
+    let fx = -sy / l;
+    let fy = sx / l;
+    if ((w.x - s.ax) * fx + (w.y - s.ay) * fy < 0) {
+      fx = -fx;
+      fy = -fy;
+    }
+    const d = fx * c.nx + fy * c.ny;
+    if (d > 0.25) return { x: fx, y: fy };
+    if (c.corner) {
+      // Stepping onto the raised end of a spring (e.g. a ramp feeding a catapult): at the tip, which side
+      // Wick is on is ambiguous, so prefer the upward-facing side.
+      const ux = fy <= 0 ? fx : -fx;
+      const uy = fy <= 0 ? fy : -fy;
+      if (uy < -0.3 && ux * c.nx + uy * c.ny > -0.2) return { x: ux, y: uy };
+    }
+    return { x: c.nx, y: c.ny };
   }
 
   private walkable(c: Contact, wasGrounded: boolean, facing: number): boolean {
