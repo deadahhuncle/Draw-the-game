@@ -1,0 +1,31 @@
+{
+  "name": "inklight",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Inklight — draw luminous ink to guide a tiny lantern-sprite home through one long night.",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "build:single": "vite build --mode single",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "verify": "tsx scripts/verify-levels.ts",
+    "shoot": "node scripts/shoot.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "playwright": "^1.56.1",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.0",
+    "vite": "^7.1.0",
+    "vite-plugin-singlefile": "^2.3.0",
+    "vitest": "^3.2.0"
+  },
+  "dependencies": {
+    "@fontsource-variable/caveat": "^5.2.0",
+    "@fontsource-variable/fraunces": "^5.2.0",
+    "@fontsource/dm-mono": "^5.2.0"
+  }
+}
