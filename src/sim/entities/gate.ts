@@ -39,4 +39,7 @@ export class Gate extends EntityBase<Def> {
     const d = this.def;
     this.segs = this.open >= 1 ? [] : polySegs(rectPts(d.x, d.y + this.offset, d.w, d.h), this.index);
   }
+  loopKey(): string {
+    return this.open.toFixed(1);
+  }
 }

@@ -21,7 +21,9 @@ function check(level: LevelDef): string[] {
   const inside = (x: number, y: number) => solids.some((t) => pointInPolygon({ x, y }, t.pts));
 
   // Static sanity.
-  if (level.ink.par > level.ink.budget) problems.push(`par ${level.ink.par} > budget ${level.ink.budget}`);
+  // Inkpots add ink mid-run, so a level may set par above its starting budget (up to budget + pots).
+  const potInk = (level.entities ?? []).reduce((a, e) => a + (e.kind === 'inkpot' ? e.amount : 0), 0);
+  if (level.ink.par > level.ink.budget + potInk) problems.push(`par ${level.ink.par} > budget ${level.ink.budget} + inkpots ${potInk}`);
   if (!level.ink.types.length) problems.push('no ink types');
   for (const s of level.solution) if (!level.ink.types.includes(s.ink)) problems.push(`solution uses unavailable ink ${s.ink}`);
   level.sparks.forEach((s, i) => {

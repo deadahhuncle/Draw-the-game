@@ -24,15 +24,18 @@ handbook: coordinates, measured physics, conventions, and how to verify.
 | Walk speed | 118 u/s (crossing the page ≈ 10 s) |
 | Gravity | 1500 u/s², terminal 1050 u/s |
 | Walkable slope | ≤ 58° (steeper = wall, Wick turns around) |
-| Steps it rolls over | any obstacle lower than its centre (≈ < 14 u above its feet) |
-| Walls that turn it | anything taller than ~16 u above its feet |
+| Steps it rolls over | on flat ground, any obstacle lower than its centre (≈ < 14 u above its feet). On an upward ramp far less: a lip ~9 u above a 28° ink ramp already turns Wick — make ramps meet or overshoot the ledge |
+| Walls that turn it | a drawn wall must rise > ~20 u above Wick's feet (18 u is climbed, 22 u turns it) |
 | Hazard grace | Brambles kill when Wick's centre is within 13 u of them |
 | Spark pickup | within 32 u of Wick's centre (Wick's centre is 16 u above the ground it walks on) |
 | Goal | Wick's centre within 34 u of (goal.x, goal.y − 16) |
 | Stuck | < 4 u of movement for 2.5 s while running = fail |
+| Endless loop | the same Wick + world state recurring 4× at bounces/turns/landings = fail ('stuck') |
 
 Wick keeps its horizontal momentum in the air and on landing (fast landings slide, decelerating at
 700 u/s²). Walking off a ledge it drops almost straight down (a short roll over the edge first).
+**Landing sets facing from the velocity along the surface**: a steep drop onto a slope (or onto a vertex or
+the end-cap of a stroke) can send Wick down that slope, i.e. back the way it came. Keep landing zones flat.
 
 ## 3. Inks (measured with `npx tsx scripts/measure.ts`)
 
@@ -58,12 +61,15 @@ Rules of thumb:
 
 ## 4. Elements (see `src/core/types.ts` EntityDef)
 
-- `inkpot {x,y,amount}` — +ink this run. Great for "draw while running" levels.
+- `inkpot {x,y,amount}` — +ink this run. Great for "draw while running" levels. `par` may exceed the
+  starting `budget` by up to the pots' total (the verifier allows `par ≤ budget + pots`).
 - `rain {x1,x2,y,rate?}` — drops fall at ~600 u/s from the cloud span (rate default 22/s). 3 hits in quick
   succession douse Wick (flame regrows after 2.5 s dry). Any solid (ink, terrain, gates) shelters.
   Rain also keeps falling during planning so players can see where it lands.
 - `wind {x,y,w,h,fx,fy}` — acceleration in u/s². Pushes airborne Wick fully, grounded Wick a little along
-  the ground. An updraft with `fy < −825` lifts a standing Wick; `fy = −1800` ≈ slow rise. Rain drifts too.
+  the ground. `fy < −825` un-grounds a standing Wick, but it only *rises* when the effective `fy < −1500`
+  (gravity); `fy = −1800` ≈ slow rise. Zones fade over the outer 10 % of their width/height, so extend an
+  updraft well below the ground and past its sides for a reliable lift. Rain drifts too.
 - `moth {x,y,speed?=80,sense?=240}` — while running, flies to the nearest ink within `sense` and eats
   ~20 u bites every 0.3 s. Drifts home when there's nothing. Harmless to Wick. **Decoy strokes** lure moths.
 - `wisp {x,y,id}` + `gate {x,y,w,h,opens:id,dir?}` — Wick touches every wisp with that id → the gate slides
@@ -112,7 +118,7 @@ export const WORLD2: LevelSpec[] = [
 3. It's **robust**: ≥ 60 % of solutions jittered by ±6 u still win (aim for ≥ 80 %). Levels should be
    solvable by a finger, not a laser.
 4. Sparks/goal/start aren't inside terrain; start and goal stand on ground.
-5. par ≤ budget. Typical: `par ≈ solution × 1.1–1.2` (rounded to 10); `budget ≈ par × 1.4–2`.
+5. par ≤ budget (+ inkpots). Typical: `par ≈ solution × 1.1–1.2` (rounded to 10); `budget ≈ par × 1.4–2`.
    Tight budgets make levels puzzles; loose budgets make them playgrounds. Vary it.
 6. **One idea per level**, stated by its geometry. The first level of a new mechanic teaches it with
    a short handwritten note (≤ 4 words) and maybe a ghost line; later levels never explain.

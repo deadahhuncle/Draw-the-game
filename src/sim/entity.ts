@@ -22,6 +22,11 @@ export interface Entity {
   idle?(dt: number): void;
   /** Optional acceleration field (e.g. wind) at a point; add into `out`. */
   accel?(x: number, y: number, out: Vec): void;
+  /**
+   * Optional compact description of gameplay-relevant state (positions of movers, lit wisps…) used by the
+   * sim's loop detector: if Wick's state *and* every entity key repeat, the run is an endless loop.
+   */
+  loopKey?(): string;
 }
 
 export abstract class EntityBase<D extends EntityDef> implements Entity {

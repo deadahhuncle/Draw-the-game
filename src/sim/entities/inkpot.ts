@@ -22,4 +22,7 @@ export class Inkpot extends EntityBase<Def> {
       this.sim.addInk(amount, x, y);
     }
   }
+  loopKey(): string {
+    return this.taken ? '1' : '0';
+  }
 }

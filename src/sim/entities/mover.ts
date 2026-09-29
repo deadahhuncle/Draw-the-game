@@ -37,4 +37,7 @@ export class Mover extends EntityBase<Def> {
     this.oy = noy;
     this.segs = polySegs(this.def.pts, this.index, this.ox, this.oy, vx, vy);
   }
+  loopKey(): string {
+    return `${Math.round(this.ox / 4)},${Math.round(this.oy / 4)}`;
+  }
 }

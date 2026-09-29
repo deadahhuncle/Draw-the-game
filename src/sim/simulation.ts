@@ -121,6 +121,8 @@ export class Simulation {
   private noInk: { pts: Vec[]; minX: number; minY: number; maxX: number; maxY: number }[];
   private pen: PenState = { active: false, ink: 'moon', stroke: null, last: null, dry: false };
   private footPhase = 0;
+  /** Loop detector: how often each (Wick state + entity state) snapshot has been seen at a bounce/turn/land. */
+  private loopSeen = new Map<string, number>();
   private externalAcc: Vec = { x: 0, y: 0 };
 
   constructor(level: LevelDef) {
@@ -469,6 +471,7 @@ export class Simulation {
     this.phase = 'running';
     this.time = 0;
     this.attempts++;
+    this.loopSeen.clear();
     // Entities may have idled cosmetically during planning — restart them from their exact t=0 state.
     for (const e of this.entities) e.reset();
     this.collectEntitySegs();
@@ -615,6 +618,7 @@ export class Simulation {
           w.noSnap = LAUNCH_NO_SNAP;
           if (Math.abs(w.vx) > 40) w.facing = w.vx > 0 ? 1 : -1;
           this.emit({ type: 'bounce', x: w.x - c.nx * WICK_R, y: w.y - c.ny * WICK_R, nx: n.x, ny: n.y, speed: bs, ink: c.seg.owner.kind === 'stroke' });
+          this.loopCheck('b');
         }
         continue;
       }
@@ -641,7 +645,10 @@ export class Simulation {
         const ty = ground.nx;
         const vt = w.vx * tx + w.vy * ty;
         if (Math.abs(vt) > 40) w.facing = vt > 0 ? 1 : -1;
-        if (w.airTime > 0.1) this.emit({ type: 'land', x: w.x, y: w.y + WICK_R, speed: Math.max(0, impactVy) });
+        if (w.airTime > 0.1) {
+          this.emit({ type: 'land', x: w.x, y: w.y + WICK_R, speed: Math.max(0, impactVy) });
+          this.loopCheck('l');
+        }
         w.vx = tx * vt;
         w.vy = ty * vt;
       }
@@ -683,6 +690,7 @@ export class Simulation {
           w.vy -= ty * vt;
         }
         this.emit({ type: 'turn', x: w.x, y: w.y, facing: w.facing });
+        this.loopCheck('t');
         break;
       }
     }
@@ -820,6 +828,21 @@ export class Simulation {
       if (!best || gap < best.gap) best = { nx: c.nx, ny: c.ny, gap, seg: s };
     });
     return best;
+  }
+
+  /**
+   * Endless loops (bouncing on a spring forever, shuttling between two walls) never trip the stuck timer.
+   * The sim is deterministic, so if the same snapshot of Wick + world recurs at a bounce/turn/landing
+   * four times with nothing collected in between, Wick has given up: fail as 'stuck'.
+   */
+  private loopCheck(kind: string): void {
+    if (this.phase !== 'running') return;
+    const w = this.wick;
+    let key = `${kind}|${Math.round(w.x / 3)}|${Math.round(w.y / 3)}|${Math.round(w.vx / 25)}|${Math.round(w.vy / 25)}|${w.facing}|${this.sparkCount}|${this.inkVersion}`;
+    for (const e of this.entities) if (e.loopKey) key += '|' + e.loopKey();
+    const n = (this.loopSeen.get(key) ?? 0) + 1;
+    this.loopSeen.set(key, n);
+    if (n >= 4) this.die('stuck');
   }
 
   private touchesHazard(x: number, y: number): boolean {

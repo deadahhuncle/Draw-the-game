@@ -29,4 +29,7 @@ export class Crumble extends EntityBase<Def> {
       this.sim.emit({ type: 'crumble', x: d.x + d.w / 2, y: d.y + d.h / 2 });
     }
   }
+  loopKey(): string {
+    return this.gone ? 'g' : this.touchedAt >= 0 ? 't' : '-';
+  }
 }

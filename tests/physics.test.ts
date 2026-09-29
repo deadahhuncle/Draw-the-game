@@ -192,3 +192,21 @@ describe('Determinism', () => {
     expect(r.won).toBe(true);
   });
 });
+
+describe('Loop detection', () => {
+  it('gives up (stuck) when Wick shuttles forever between two walls', () => {
+    const sim = new Simulation(lvl({}));
+    sim.drawStroke('moon', [
+      { x: 60, y: 600 },
+      { x: 60, y: 540 },
+    ]);
+    sim.drawStroke('moon', [
+      { x: 300, y: 600 },
+      { x: 300, y: 540 },
+    ]);
+    sim.go();
+    run(sim, 30);
+    expect(sim.phase).toBe('dead');
+    expect(sim.deathCause).toBe('stuck');
+  });
+});

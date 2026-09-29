@@ -22,4 +22,7 @@ export class Wisp extends EntityBase<Def> {
       this.sim.emit({ type: 'wisp-lit', id, x, y });
     }
   }
+  loopKey(): string {
+    return this.lit ? '1' : '0';
+  }
 }
